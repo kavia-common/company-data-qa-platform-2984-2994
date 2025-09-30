@@ -15,7 +15,10 @@ export default function Sidebar({
     if (val == null) return fallback;
     if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") return String(val);
     try {
-      if (typeof val === "object" && "question" in val) return String(val.question ?? fallback);
+      if (typeof val === "object") {
+        if (typeof val.text === "string") return val.text;
+        if (typeof val.question === "string") return val.question;
+      }
       const s = JSON.stringify(val);
       return s.length > 120 ? s.slice(0, 120) + "…" : s;
     } catch {

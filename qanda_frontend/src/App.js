@@ -83,43 +83,53 @@ function App() {
     try {
       const res = await askQuestion({ question, user_id: user?.id });
       // backend response contract: { answer | answer_text, references? }
-      const answerText = typeof res?.answer_text === "string"
-        ? res.answer_text
-        : typeof res?.answer === "string"
-        ? res.answer
-        : (() => {
-            try {
-              return JSON.stringify(res?.answer ?? res ?? "No answer.");
-            } catch {
-              return "No answer.";
-            }
-          })();
+      const extractAnswer = (val) => {
+        if (val == null) return "";
+        if (typeof val === "string") return val;
+        if (typeof val === "object") {
+          if (typeof val.answer_text === "string") return val.answer_text;
+          if (typeof val.text === "string") return val.text;
+          if (typeof val.answer === "string") return val.answer;
+          try {
+            const s = JSON.stringify(val);
+            return s.length > 1000 ? s.slice(0, 1000) + "…" : s;
+          } catch {
+            return "";
+          }
+        }
+        return String(val);
+      };
+      const answerText = extractAnswer(res?.answer_text ?? res?.answer ?? res);
 
-      const refs = Array.isArray(res?.references) ? res.references : [];
-      const normalizedRefs = refs.map((r, i) => {
+      const refsRaw = Array.isArray(res?.references) ? res.references : [];
+      const normalizedRefs = refsRaw.map((r, i) => {
         if (r && typeof r === "object") {
-          // keep only safe primitive fields
           const title =
             typeof r.title === "string"
               ? r.title
               : typeof r.name === "string"
               ? r.name
-              : `Chunk ${r.chunk_index ?? i}`;
+              : typeof r.document_title === "string"
+              ? r.document_title
+              : `Reference ${r.chunk_index ?? i}`;
           const text =
             typeof r.text === "string"
               ? r.text
               : typeof r.content === "string"
               ? r.content
+              : typeof r.snippet === "string"
+              ? r.snippet
+              : typeof r.excerpt === "string"
+              ? r.excerpt
               : typeof r.answer_text === "string"
               ? r.answer_text
               : undefined;
           return { title, text };
         }
-        // if string or other primitive, use as text
-        return { title: `Chunk ${i}`, text: String(r) };
+        return { title: `Reference ${i + 1}`, text: String(r) };
       });
 
-      const updated = { ...turn, answer: answerText || "No answer.", references: normalizedRefs };
+      const updated = { ...turn, answer: (answerText || "No answer.").trim(), references: normalizedRefs };
       setHistory((prev) => {
         const copy = [...prev];
         copy[copy.length - 1] = updated;
