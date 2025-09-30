@@ -6,7 +6,7 @@ Modern, responsive React UI for the Q&A platform. Clean layout with header, side
 
 1. Copy environment example and adjust if needed:
    cp .env.example .env
-   # Ensure REACT_APP_BACKEND_API_URL points to your backend, e.g. http://localhost:3001/api/
+   # Ensure REACT_APP_BACKEND_API_URL points to your backend API ROOT, e.g. http://localhost:3001/api/
 
 2. Install and run:
    npm install
@@ -31,7 +31,16 @@ Open http://localhost:3000 in your browser.
 
 ## Configuration
 
-- REACT_APP_BACKEND_API_URL in .env (must end with /api/)
+- REACT_APP_BACKEND_API_URL in .env (must end with /api/ and include a trailing slash).
+  - Correct: http://localhost:3001/api/
+  - Incorrect: http://localhost:3001/api  (missing slash)
+  - Incorrect: http://localhost:3001/apiqa/ (invalid base, will cause 404s)
+
+## Troubleshooting
+
+- 404 Not Found on API calls:
+  - Verify REACT_APP_BACKEND_API_URL ends with `/api/` and not `/apiqa/`.
+  - Check network tab requests such as `/api/health/`, `/api/qa/`, `/api/documents/`, `/api/users/` return 200s.
 
 ## Notes
 

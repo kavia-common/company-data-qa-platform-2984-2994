@@ -1,8 +1,21 @@
-const BASE_URL = process.env.REACT_APP_BACKEND_API_URL || "http://localhost:3001/api";
+/**
+ * Build the backend base URL, ensuring it ends with `/api/` to avoid 404s when the
+ * environment value accidentally omits or uses a wrong suffix like `/apiqa/`.
+ * This normalizes common mistakes and keeps request construction consistent.
+ */
+const RAW_BASE = process.env.REACT_APP_BACKEND_API_URL || "http://localhost:3001/api/";
+// Normalize to ensure trailing `/`
+const NORMALIZED = RAW_BASE.endsWith("/") ? RAW_BASE : `${RAW_BASE}/`;
+// Replace accidental `/apiqa/` with `/api/`
+const BASE_URL = NORMALIZED.replace(/\/apiqa\/?$/i, "/api/");
 
-// Minimal fetch helper with error handling
+/**
+ * Minimal fetch helper with error handling.
+ * Ensures path joining without double slashes.
+ */
 async function http(path, options = {}) {
-  const url = `${BASE_URL}${path.replace(/^\//, "")}`;
+  const cleanedPath = String(path || "").replace(/^\//, ""); // strip leading slash
+  const url = `${BASE_URL}${cleanedPath}`;
   const resp = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
