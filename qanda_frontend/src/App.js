@@ -82,8 +82,44 @@ function App() {
     setActiveIdx(newHistory.length - 1);
     try {
       const res = await askQuestion({ question, user_id: user?.id });
-      // backend response contract: { answer, references? }
-      const updated = { ...turn, answer: res?.answer || "No answer.", references: res?.references || [] };
+      // backend response contract: { answer | answer_text, references? }
+      const answerText = typeof res?.answer_text === "string"
+        ? res.answer_text
+        : typeof res?.answer === "string"
+        ? res.answer
+        : (() => {
+            try {
+              return JSON.stringify(res?.answer ?? res ?? "No answer.");
+            } catch {
+              return "No answer.";
+            }
+          })();
+
+      const refs = Array.isArray(res?.references) ? res.references : [];
+      const normalizedRefs = refs.map((r, i) => {
+        if (r && typeof r === "object") {
+          // keep only safe primitive fields
+          const title =
+            typeof r.title === "string"
+              ? r.title
+              : typeof r.name === "string"
+              ? r.name
+              : `Chunk ${r.chunk_index ?? i}`;
+          const text =
+            typeof r.text === "string"
+              ? r.text
+              : typeof r.content === "string"
+              ? r.content
+              : typeof r.answer_text === "string"
+              ? r.answer_text
+              : undefined;
+          return { title, text };
+        }
+        // if string or other primitive, use as text
+        return { title: `Chunk ${i}`, text: String(r) };
+      });
+
+      const updated = { ...turn, answer: answerText || "No answer.", references: normalizedRefs };
       setHistory((prev) => {
         const copy = [...prev];
         copy[copy.length - 1] = updated;

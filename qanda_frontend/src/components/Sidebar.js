@@ -11,6 +11,18 @@ export default function Sidebar({
   setActiveTab,
 }) {
   /** Left sidebar with tabs for history and documents */
+  const toText = (val, fallback = "") => {
+    if (val == null) return fallback;
+    if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") return String(val);
+    try {
+      if (typeof val === "object" && "question" in val) return String(val.question ?? fallback);
+      const s = JSON.stringify(val);
+      return s.length > 120 ? s.slice(0, 120) + "…" : s;
+    } catch {
+      return fallback;
+    }
+  };
+
   return (
     <aside className="oc-sidebar">
       <div className="oc-tabs">
@@ -36,8 +48,10 @@ export default function Sidebar({
             )}
             {history.map((item, idx) => (
               <button key={idx} className="oc-list-item" onClick={() => onSelectHistory(idx)}>
-                <div className="oc-list-title">{item.question}</div>
-                <div className="oc-list-subtitle">{new Date(item.ts).toLocaleString()}</div>
+                <div className="oc-list-title">{toText(item?.question, "Question")}</div>
+                <div className="oc-list-subtitle">
+                  {item?.ts ? new Date(item.ts).toLocaleString() : ""}
+                </div>
               </button>
             ))}
           </div>
@@ -51,8 +65,8 @@ export default function Sidebar({
             {documents.map((doc) => (
               <div key={doc.id} className="oc-list-item row">
                 <div>
-                  <div className="oc-list-title">{doc.title}</div>
-                  {doc.description && <div className="oc-list-subtitle">{doc.description}</div>}
+                  <div className="oc-list-title">{toText(doc?.title, "Untitled")}</div>
+                  {doc?.description && <div className="oc-list-subtitle">{toText(doc.description)}</div>}
                 </div>
                 <div className="oc-actions">
                   <button className="oc-btn xs ghost" onClick={() => onSelectDocument(doc)}>View</button>
