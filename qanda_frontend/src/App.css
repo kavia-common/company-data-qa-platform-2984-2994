@@ -1,104 +1,193 @@
-/* CSS Variables for Theme Management */
-:root {
-  /* Light theme colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-primary: #282c34;
-  --text-secondary: #61dafb;
-  --border-color: #e9ecef;
-  --button-bg: #007bff;
-  --button-text: #ffffff;
+:root{
+  --oc-primary:#2563EB;
+  --oc-secondary:#F59E0B;
+  --oc-success:#F59E0B;
+  --oc-error:#EF4444;
+  --oc-bg:#f9fafb;
+  --oc-surface:#ffffff;
+  --oc-text:#111827;
+  --oc-text-muted:#6b7280;
+  --oc-border:#e5e7eb;
+  --oc-shadow:rgba(0,0,0,0.06);
+
+  --oc-radius-sm:8px;
+  --oc-radius-md:12px;
+  --oc-radius-lg:16px;
+  --oc-radius-round:999px;
+
+  --oc-shadow-sm:0 1px 2px rgba(0,0,0,0.05);
+  --oc-shadow-md:0 4px 12px rgba(0,0,0,0.08);
+  --oc-shadow-lg:0 10px 25px rgba(0,0,0,0.10);
+
+  --oc-transition: all 200ms ease;
 }
 
-[data-theme="dark"] {
-  /* Dark theme colors */
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #282c34;
-  --text-primary: #ffffff;
-  --text-secondary: #61dafb;
-  --border-color: #404040;
-  --button-bg: #0056b3;
-  --button-text: #ffffff;
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  background:var(--oc-bg);
+  color:var(--oc-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
 }
 
-.App {
-  text-align: center;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
+/* Layout */
+.app-shell{
+  display:grid;
+  grid-template-rows:64px 1fr;
+  height:100vh;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.oc-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+  background:linear-gradient(90deg, rgba(37,99,235,0.08), rgba(249,250,251,1));
+  border-bottom:1px solid var(--oc-border);
+  backdrop-filter:saturate(150%) blur(4px);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.oc-brand{display:flex;gap:12px;align-items:center}
+.oc-logo{
+  width:36px;height:36px;border-radius:12px;background:var(--oc-primary);
+  color:white;display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--oc-shadow-md);font-weight:700;
+}
+.oc-title{font-weight:700}
+.oc-subtitle{font-size:12px;color:var(--oc-text-muted)}
+
+.oc-header-actions{display:flex;gap:8px;align-items:center}
+.oc-health{color:var(--oc-text-muted);margin-right:8px}
+
+.app-content{
+  display:grid;
+  grid-template-columns:300px 1fr;
+  height:calc(100vh - 64px);
 }
 
-.App-header {
-  background-color: var(--bg-secondary);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: var(--text-primary);
-  transition: background-color 0.3s ease;
-  position: relative;
+/* Sidebar */
+.oc-sidebar{
+  border-right:1px solid var(--oc-border);
+  background:var(--oc-surface);
+  padding:12px;
+  overflow:auto;
 }
-
-.App-link {
-  color: var(--text-secondary);
-  transition: color 0.3s ease;
+.oc-tabs{display:flex;gap:8px;margin-bottom:12px}
+.oc-tab{
+  flex:1;
+  background:transparent;
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-sm);
+  padding:8px 10px;
+  cursor:pointer;
+  transition:var(--oc-transition);
 }
-
-.theme-toggle {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background-color: var(--button-bg);
-  color: var(--button-text);
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.oc-tab.active{
+  background:rgba(37,99,235,0.08);
+  border-color:var(--oc-primary);
+  color:var(--oc-primary);
 }
-
-.theme-toggle:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  opacity: 0.9;
+.oc-list{display:flex;flex-direction:column;gap:8px}
+.oc-list-item{
+  width:100%; text-align:left;
+  background:var(--oc-surface);
+  border:1px solid var(--oc-border);
+  border-radius:var(--oc-radius-md);
+  padding:10px;
+  box-shadow:var(--oc-shadow-sm);
+  transition:var(--oc-transition);
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
 }
+.oc-list-item:hover{transform:translateY(-1px);box-shadow:var(--oc-shadow-md)}
+.oc-list-title{font-weight:600}
+.oc-list-subtitle{font-size:12px;color:var(--oc-text-muted)}
+.oc-empty{padding:12px;color:var(--oc-text-muted);font-size:14px}
+.oc-actions{display:flex;gap:6px}
 
-.theme-toggle:active {
-  transform: translateY(0);
+/* Panel */
+.oc-center{
+  position:relative;
+  display:flex;flex-direction:column;height:100%;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.oc-panel{
+  padding:16px;
+  overflow:auto;
 }
+.oc-panel-empty{display:flex;align-items:center;justify-content:center;height:100%}
+.oc-hero{ text-align:center; color:var(--oc-text-muted)}
+.oc-hero-icon{font-size:48px;margin-bottom:6px}
+.oc-hero-title{font-size:20px;font-weight:700;color:var(--oc-text)}
+.oc-hero-sub{font-size:14px}
 
-/* Responsive design for mobile */
-@media (max-width: 768px) {
-  .theme-toggle {
-    top: 10px;
-    right: 10px;
-    padding: 8px 16px;
-    font-size: 12px;
-  }
+.oc-msg{display:flex;gap:10px;margin-bottom:12px}
+.oc-avatar{
+  width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--oc-shadow-sm); background:#eef2ff;
+}
+.oc-avatar.bot{background:#ecfeff}
+.oc-bubble{
+  background:var(--oc-surface);
+  border:1px solid var(--oc-border);
+  border-radius:16px;
+  padding:10px 12px;
+  box-shadow:var(--oc-shadow-sm);
+  max-width:900px;
+}
+.oc-bubble-header{font-weight:700;font-size:13px;margin-bottom:4px}
+.oc-bubble-refs{margin-top:8px; border-top:1px dashed var(--oc-border); padding-top:8px}
+.oc-refs-title{font-weight:600;color:var(--oc-text-muted);font-size:12px;margin-bottom:6px}
+.oc-refs-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.oc-ref-item{background:#f3f4f6;border:1px solid var(--oc-border);border-radius:10px;padding:8px}
+.oc-ref-title{font-weight:600;font-size:13px}
+.oc-ref-text{font-size:12px;color:#374151}
+
+/* Input bar */
+.oc-inputbar{
+  position:sticky;bottom:0;left:0;right:0;
+  display:flex;gap:8px;padding:12px;border-top:1px solid var(--oc-border);
+  background:linear-gradient(180deg, rgba(255,255,255,0.75), var(--oc-surface));
+  backdrop-filter: blur(4px);
+}
+.oc-input{
+  flex:1;border:1px solid var(--oc-border); border-radius:var(--oc-radius-round);
+  padding:12px 14px; outline:none; transition:var(--oc-transition); font-size:14px;
+  box-shadow:var(--oc-shadow-sm); background:white;
+}
+.oc-input:focus{border-color:var(--oc-primary); box-shadow:0 0 0 4px rgba(37,99,235,0.15)}
+
+/* Buttons */
+.oc-btn{
+  border:1px solid var(--oc-border);
+  background:var(--oc-surface);
+  border-radius:var(--oc-radius-sm);
+  padding:8px 12px;
+  cursor:pointer; transition:var(--oc-transition);
+  box-shadow:var(--oc-shadow-sm);
+  font-weight:600;
+}
+.oc-btn:hover{transform:translateY(-1px); box-shadow:var(--oc-shadow-md)}
+.oc-btn.primary{background:var(--oc-primary); color:#fff; border-color:transparent}
+.oc-btn.ghost{background:transparent}
+.oc-btn.danger{border-color:#fecaca; color:#b91c1c}
+.oc-btn.icon{padding:6px 8px}
+.oc-btn.xs{padding:4px 8px; font-size:12px}
+
+.oc-modal-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,0.25);
+  display:flex; align-items:center; justify-content:center; padding:16px; z-index:50;
+}
+.oc-modal{
+  width:100%; max-width:560px; background:var(--oc-surface);
+  border:1px solid var(--oc-border); border-radius:16px; box-shadow:var(--oc-shadow-lg);
+}
+.oc-modal-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--oc-border)}
+.oc-modal-title{font-weight:700}
+.oc-modal-body{padding:14px; display:flex; flex-direction:column; gap:10px}
+.oc-modal-footer{padding:12px 14px; border-top:1px solid var(--oc-border); display:flex; justify-content:flex-end; gap:8px}
+
+/* Responsive */
+@media (max-width: 960px){
+  .app-content{grid-template-columns: 0 1fr;}
+  .oc-sidebar{display:none}
 }
