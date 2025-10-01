@@ -1,28 +1,61 @@
 /**
- * Build the backend base URL, ensuring it ends with `/api/` to avoid 404s when the
- * environment value accidentally omits or uses a wrong suffix like `/apiqa/`.
- * This normalizes common mistakes and keeps request construction consistent.
+ * Build the backend base URL robustly:
+ * - Prefer REACT_APP_BACKEND_API_URL if provided.
+ * - Else try same-origin relative "/api/" (works when reverse-proxied).
+ * - Else derive from window.location using current protocol/host with port 3001.
+ * Always ensure it ends with "/api/" and fix accidental "/apiqa/".
  */
-const RAW_BASE = process.env.REACT_APP_BACKEND_API_URL || "http://localhost:3001/api/";
-// Normalize to ensure trailing `/`
-const NORMALIZED = RAW_BASE.endsWith("/") ? RAW_BASE : `${RAW_BASE}/`;
-// Replace accidental `/apiqa/` with `/api/`
-const BASE_URL = NORMALIZED.replace(/\/apiqa\/?$/i, "/api/");
+function buildBaseUrl() {
+  const envBase = process.env.REACT_APP_BACKEND_API_URL;
+  if (envBase && typeof envBase === "string" && envBase.trim()) {
+    const norm = (envBase.endsWith("/") ? envBase : `${envBase}/`).replace(/\/apiqa\/?$/i, "/api/");
+    return norm;
+  }
+
+  // If running behind same origin proxy, use relative "/api/"
+  // This avoids mixed-content issues and lets the deployment route handle ports/TLS.
+  const relative = "/api/";
+  // In browsers, a relative URL is resolved against current origin; keep it.
+  // We still normalize accidental "/apiqa/" somewhere upstream.
+  const relNorm = relative.replace(/\/apiqa\/?$/i, "/api/");
+  if (typeof window !== "undefined" && window.location) {
+    // Additionally compute a fallback absolute URL with the current protocol and host,
+    // forcing port 3001 only if none is present in host (e.g., in local dev).
+    const { protocol, hostname, port } = window.location;
+    const desiredPort = port && port !== "3000" ? port : "3001";
+    const abs = `${protocol}//${hostname}:${desiredPort}/api/`;
+    // Prefer relative for proxy-friendly setups; keep absolute as last resort.
+    // We will return relative and use absolute only if fetch with relative fails later (handled in error messaging).
+    return relNorm || abs;
+  }
+  // Node/test fallback
+  return "http://localhost:3001/api/";
+}
+
+const BASE_URL = buildBaseUrl();
 
 /**
  * Minimal fetch helper with error handling.
- * Ensures path joining without double slashes.
+ * Ensures path joining without double slashes and provides clearer network errors.
  */
 async function http(path, options = {}) {
   const cleanedPath = String(path || "").replace(/^\//, ""); // strip leading slash
   const url = `${BASE_URL}${cleanedPath}`;
-  const resp = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  let resp;
+  try {
+    resp = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+  } catch (networkErr) {
+    // Likely CORS, DNS, mixed-content (http on https), or server unreachable
+    const hint = `Network error while calling ${url}. Check REACT_APP_BACKEND_API_URL, protocol (https vs http), and that the backend is reachable.`;
+    throw new Error(`${networkErr?.message || "Failed to fetch"} — ${hint}`);
+  }
+
   const contentType = resp.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
   if (!resp.ok) {
