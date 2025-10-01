@@ -1,35 +1,47 @@
 /**
  * Build the backend base URL robustly:
- * - Prefer REACT_APP_BACKEND_API_URL if provided.
- * - Else try same-origin relative "/api/" (works when reverse-proxied).
- * - Else derive from window.location using current protocol/host with port 3001.
+ * - Prefer REACT_APP_BACKEND_API_URL if provided (must end with /api/).
+ * - Else try same-origin relative "/api/" (works only when reverse-proxied).
  * Always ensure it ends with "/api/" and fix accidental "/apiqa/".
  */
 function buildBaseUrl() {
   const envBase = process.env.REACT_APP_BACKEND_API_URL;
   if (envBase && typeof envBase === "string" && envBase.trim()) {
-    const norm = (envBase.endsWith("/") ? envBase : `${envBase}/`).replace(/\/apiqa\/?$/i, "/api/");
+    // Normalize: enforce trailing slash, correct path ending
+    let norm = envBase.trim();
+    if (!/^[a-z]+:\/\//i.test(norm)) {
+      console.warn(
+        "[API] REACT_APP_BACKEND_API_URL should include protocol (http/https). Current:",
+        norm
+      );
+    }
+    // Fix accidental /apiqa and ensure /api/ ending
+    norm = (norm.endsWith("/") ? norm : `${norm}/`).replace(/\/apiqa\/?$/i, "/api/");
+    if (!/\/api\/$/i.test(norm)) {
+      if (/\/api$/i.test(norm)) norm = `${norm}/`;
+      else norm = norm.replace(/\/?$/, "/api/");
+    }
+    // Warn on mixed content risk
+    if (typeof window !== "undefined" && window.location) {
+      const pageIsHttps = window.location.protocol === "https:";
+      const envIsHttp = norm.toLowerCase().startsWith("http:");
+      if (pageIsHttps && envIsHttp) {
+        console.warn(
+          "[API] Detected HTTPS page with HTTP API URL; this will be blocked by the browser (mixed content).",
+          "Use an HTTPS API URL."
+        );
+      }
+    }
     return norm;
   }
 
-  // If running behind same origin proxy, use relative "/api/"
-  // This avoids mixed-content issues and lets the deployment route handle ports/TLS.
-  const relative = "/api/";
-  // In browsers, a relative URL is resolved against current origin; keep it.
-  // We still normalize accidental "/apiqa/" somewhere upstream.
-  const relNorm = relative.replace(/\/apiqa\/?$/i, "/api/");
-  if (typeof window !== "undefined" && window.location) {
-    // Additionally compute a fallback absolute URL with the current protocol and host,
-    // forcing port 3001 only if none is present in host (e.g., in local dev).
-    const { protocol, hostname, port } = window.location;
-    const desiredPort = port && port !== "3000" ? port : "3001";
-    const abs = `${protocol}//${hostname}:${desiredPort}/api/`;
-    // Prefer relative for proxy-friendly setups; keep absolute as last resort.
-    // We will return relative and use absolute only if fetch with relative fails later (handled in error messaging).
-    return relNorm || abs;
-  }
-  // Node/test fallback
-  return "http://localhost:3001/api/";
+  // No env set: rely on relative /api/ which only works behind a reverse proxy
+  const relBase = "/api/";
+  console.warn(
+    "[API] REACT_APP_BACKEND_API_URL is not set; using relative '/api/'." +
+      " This requires the frontend host to reverse-proxy to the backend. In cloud previews, set REACT_APP_BACKEND_API_URL to the backend's full HTTPS URL (ending with /api/)."
+  );
+  return relBase.replace(/\/apiqa\/?$/i, "/api/");
 }
 
 const BASE_URL = buildBaseUrl();
@@ -52,7 +64,10 @@ async function http(path, options = {}) {
     });
   } catch (networkErr) {
     // Likely CORS, DNS, mixed-content (http on https), or server unreachable
-    const hint = `Network error while calling ${url}. Check REACT_APP_BACKEND_API_URL, protocol (https vs http), and that the backend is reachable.`;
+    const hint =
+      `Network error while calling ${url}. ` +
+      `Resolved BASE_URL='${BASE_URL}'. ` +
+      `If this is a cloud preview, ensure REACT_APP_BACKEND_API_URL is set to the backend's HTTPS domain ending with /api/.`;
     throw new Error(`${networkErr?.message || "Failed to fetch"} — ${hint}`);
   }
 
